@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { readFile } from 'fs/promises';
 import { parse } from 'papaparse';
 import { FilesRepo } from './files.repo';
+import { unlinkSync } from 'fs';
 
 @Injectable()
 export class FilesService {
@@ -23,5 +24,7 @@ export class FilesService {
         });
 
         this.repo.createMany(parsedCSV.data, collection);
+
+        unlinkSync(file.path);
     }
 }
