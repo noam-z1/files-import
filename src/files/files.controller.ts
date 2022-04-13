@@ -1,9 +1,14 @@
 import { Body, Controller, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage} from 'multer';
+import { FilesService } from './files.service';
 
 @Controller('/files')
 export class FilesController {
+  constructor(
+    private filesService: FilesService,
+  ) {}
+
   @Post()
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -26,7 +31,10 @@ export class FilesController {
     @Body() body: any,
     @UploadedFiles() files: {patients: Express.Multer.File[], treatments: Express.Multer.File[]},
     ) {
-      console.log("file", files)
-      console.log("body", body)
+      Object.keys(files).forEach(category => {
+        files[category].forEach((file) => {
+          this.filesService.parseFile(file);
+        })
+      })
   }
 }
