@@ -16,7 +16,7 @@ export class FilesController {
       { name: 'treatments', maxCount: 1 },
     ], {
       storage: diskStorage({
-            destination: './files',
+            destination: `./${process.env.FILES_LOCATION}`,
             filename: (req, file, callback) => {
               // ToDo: change to token
               const hospitalId = req.headers.hospitalid;
