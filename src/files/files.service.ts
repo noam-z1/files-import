@@ -10,9 +10,10 @@ export class FilesService {
         private repo: FilesRepo,
     ) {}
 
-    async parseFile(file: Express.Multer.File){
+    async parseFile(file: Express.Multer.File, hospitalId: string){
+        console.log("inside service", hospitalId)
         //ToDo: read file and parse line by line
-        const collection = `Hospital${file.filename.split('.', 2).join('-')}`
+        const collection = `Hospital${hospitalId}-${file.fieldname}`
         const csvFile = await readFile(file.path);
         const csvData = csvFile.toString();
 

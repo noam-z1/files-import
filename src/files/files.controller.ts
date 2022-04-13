@@ -1,6 +1,7 @@
-import { Body, Controller, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Controller, Post, Req, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage} from 'multer';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { FilesService } from './files.service';
 
 @Controller('/files')
@@ -10,15 +11,17 @@ export class FilesController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'patients', maxCount: 1 },
       { name: 'treatments', maxCount: 1 },
     ], {
       storage: diskStorage({
-            destination: `./${process.env.FILES_LOCATION}`,
+            destination: `./files`,
             filename: (req, file, callback) => {
               // ToDo: change to token
+              // const hospitalId = req.user.hospitalid;
               const hospitalId = req.headers.hospitalid;
               const date = new Date().toISOString().slice(0, 10);
               callback(null, `${hospitalId}.${file.fieldname}.${date}.csv`);
@@ -28,12 +31,12 @@ export class FilesController {
 
   )
   async uploadFile(
-    @Body() body: any,
     @UploadedFiles() files: {patients: Express.Multer.File[], treatments: Express.Multer.File[]},
+    @Req() request,
     ) {
       Object.keys(files).forEach(category => {
         files[category].forEach((file) => {
-          this.filesService.parseFile(file);
+          this.filesService.parseFile(file, request.user.hospitalId);
         })
       })
   }
