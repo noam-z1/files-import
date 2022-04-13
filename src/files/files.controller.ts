@@ -1,10 +1,20 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Post, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage} from 'multer';
 
 @Controller('/files')
 export class FilesController {
-  @Get()
-  healthcheck() {
-    console.log('All good!');
+  @Post()
+  @UseInterceptors(
+    FileInterceptor('file'
+    // , {
+    //   storage: diskStorage({
+    //     destination: './files',
+    //   })
+    // }
+    )
+  )
+  async uploadFile() {
     return 'All good!';
   }
 }
