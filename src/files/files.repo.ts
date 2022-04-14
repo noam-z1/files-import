@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Db } from "mongodb";
 
 @Injectable()
@@ -8,11 +8,27 @@ export class FilesRepo {
         private db: Db,
     ) {}
 
-    async createOne(file, collection: string){
-        await this.db.collection(collection).insertOne(file);
+    async createMany(rows, collection: string){
+        await this.db.collection(collection).insertMany(rows);
     }
 
-    async createMany(files, collection: string){
-        await this.db.collection(collection).insertMany(files);
+    async upsertWithUniqueFields(fields: string[], row, collection: string){
+        const Itemfields = {};
+        fields.forEach((field) => {
+            Itemfields[field] = row[field];
+        })
+        await this.db.collection(collection).updateOne(Itemfields, {$set: row}, {upsert: true})
+    }
+
+    async getUniqueFields(hospitalId: string, fileType: string){
+        const fields = await this.db.collection('hospitals').findOne({ id: hospitalId });
+        if (!fields){
+            throw new HttpException('Hospital id not found', HttpStatus.BAD_REQUEST);
+        }
+        try {
+            return fields.uniqueColumns[fileType];
+        } catch (e) {
+            return null;
+        }
     }
 }

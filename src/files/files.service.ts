@@ -14,18 +14,26 @@ export class FilesService {
     async parseFile(file: fileWithHospitalId){
         const { hospitalId, fieldname: fileType, path } = file
         const collection = `Hospital${hospitalId}-${fileType}`;
+        const fields = await this.repo.getUniqueFields(hospitalId, fileType);
         const data = [];
         try {
             await csv()
                 .fromStream(createReadStream(path))
                 .subscribe(async (row) => {
-                    data.push(row);
-                    if (data.length === parseInt(process.env.BULK_SIZE)) {
-                        await this.repo.createMany(data, collection);
-                        data.length = 0;
+                    if (fields) {
+                        this.repo.upsertWithUniqueFields(fields, row, collection);
+                    } else {
+                        data.push(row);
+                        if (data.length === parseInt(process.env.BULK_SIZE)) {
+                            await this.repo.createMany(data, collection);
+                            data.length = 0;
+                        }
                     }
-                })
-            await this.repo.createMany(data, collection);
+                });
+
+            if (!fields){
+                await this.repo.createMany(data, collection);
+            }
             unlinkSync(path);
         } catch (e) {
             console.log(`Error parsing files, ${e}`);
