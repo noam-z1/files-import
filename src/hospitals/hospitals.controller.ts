@@ -1,7 +1,15 @@
-import { Body, Controller, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { HospitalsService } from './hospitals.service';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto, UniqueColumns } from './dto/signup.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('/hospitals')
 export class HospitalsController {
@@ -23,12 +31,10 @@ export class HospitalsController {
   }
 
   @Patch('/update')
-  async updateHospital(
-    @Query('hospitalId') hospitalId: string,
-    @Body() body: UniqueColumns,
-  ) {
+  @UseGuards(JwtAuthGuard)
+  async updateHospital(@Body() body: UniqueColumns, @Req() request) {
     const result = await this.hospitalservice.updateSpecialColumns(
-      hospitalId,
+      request.user.hospitalId,
       body,
     );
     return result;

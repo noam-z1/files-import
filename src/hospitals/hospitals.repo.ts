@@ -40,7 +40,6 @@ export class HospitalsRepo {
     uniqueColumns: UniqueColumns,
   ) {
     let result;
-    console.log(hospitalId, uniqueColumns);
     try {
       result = await this.db
         .collection('hospitals')
