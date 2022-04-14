@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { readFile } from 'fs/promises';
 import * as csv from 'csv-parser';
 import { FilesRepo } from './files.repo';
 import { createReadStream, unlinkSync } from 'fs';
@@ -13,10 +12,11 @@ export class FilesService {
     ) {}
 
     async parseFile(file: fileWithHospitalId){
-        const collection = `Hospital${file.hospitalId}-${file.fieldname}`
+        const { hospitalId, fieldname: fileType, path } = file
+        const collection = `Hospital${hospitalId}-${fileType}`;
         const data = [];
         try {
-            createReadStream(file.path)
+            createReadStream(path)
             .pipe(csv())
             .on('data', async (row) => {
                 data.push(row);
@@ -27,7 +27,7 @@ export class FilesService {
             })
             .on('end', async () => {
                 await this.repo.createMany(data, collection);
-                unlinkSync(file.path);
+                unlinkSync(path);
             });
         } catch (e) {
             console.log(`Error parsing files, ${e}`);
