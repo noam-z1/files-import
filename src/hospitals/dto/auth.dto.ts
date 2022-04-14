@@ -1,4 +1,4 @@
-export class AuthDto{
-    hospitalId: string;
-    password?: string;
+export class AuthDto {
+  hospitalId: string;
+  password?: string;
 }

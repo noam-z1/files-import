@@ -7,36 +7,34 @@ export type fileWithHospitalId = Express.Multer.File & { hospitalId: string };
 
 @Injectable()
 export class FilesService {
-    constructor(
-        private repo: FilesRepo,
-    ) {}
+  constructor(private repo: FilesRepo) {}
 
-    async parseFile(file: fileWithHospitalId){
-        const { hospitalId, fieldname: fileType, path } = file
-        const collection = `Hospital${hospitalId}-${fileType}`;
-        const fields = await this.repo.getUniqueFields(hospitalId, fileType);
-        const data = [];
-        try {
-            await csv()
-                .fromStream(createReadStream(path))
-                .subscribe(async (row) => {
-                    if (fields) {
-                        this.repo.upsertWithUniqueFields(fields, row, collection);
-                    } else {
-                        data.push(row);
-                        if (data.length === parseInt(process.env.BULK_SIZE)) {
-                            await this.repo.createMany(data, collection);
-                            data.length = 0;
-                        }
-                    }
-                });
-
-            if (!fields){
-                await this.repo.createMany(data, collection);
+  async parseFile(file: fileWithHospitalId) {
+    const { hospitalId, fieldname: fileType, path } = file;
+    const collection = `Hospital${hospitalId}-${fileType}`;
+    const fields = await this.repo.getUniqueFields(hospitalId, fileType);
+    const data = [];
+    try {
+      await csv()
+        .fromStream(createReadStream(path))
+        .subscribe(async (row) => {
+          if (fields) {
+            this.repo.upsertWithUniqueFields(fields, row, collection);
+          } else {
+            data.push(row);
+            if (data.length === parseInt(process.env.BULK_SIZE)) {
+              await this.repo.createMany(data, collection);
+              data.length = 0;
             }
-            unlinkSync(path);
-        } catch (e) {
-            console.log(`Error parsing files, ${e}`);
-        }
+          }
+        });
+
+      if (!fields) {
+        await this.repo.createMany(data, collection);
+      }
+      unlinkSync(path);
+    } catch (e) {
+      console.log(`Error parsing files, ${e}`);
     }
+  }
 }

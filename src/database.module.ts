@@ -12,7 +12,7 @@ import { MongoClient, Db } from 'mongodb';
         } catch (e) {
           throw e;
         }
-      }
+      },
     },
   ],
   exports: ['DATABASE_CONNECTION'],
