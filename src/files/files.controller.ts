@@ -1,7 +1,7 @@
 import { Controller, Post, Req, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage} from 'multer';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/hospitals/guards/jwt-auth.guard';
 import { FilesService, fileWithHospitalId } from './files.service';
 
 @Controller('/files')
@@ -34,7 +34,7 @@ export class FilesController {
     @Req() request,
     ) {
       Object.keys(files).forEach(category => {
-        files[category].forEach((file) => {
+        files[category].forEach((file: Express.Multer.File) => {
           const fileWithHospitalId: fileWithHospitalId = {
             ...file,
             hospitalId: request.user.hospitalId,

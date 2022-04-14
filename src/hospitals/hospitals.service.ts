@@ -1,12 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { sign } from "jsonwebtoken";
-import { AuthRepo } from "./auth.repo";
+import { HospitalsRepo } from "./hospitals.repo";
 import { SignupDto } from "./dto/signup.dto";
 
 @Injectable()
-export class AuthService {
+export class HospitalsService {
     constructor(
-        private repo: AuthRepo,
+        private repo: HospitalsRepo,
     ) {}
 
     async login(
