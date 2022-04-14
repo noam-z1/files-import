@@ -1,73 +1,42 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# System design assignment for a job interview
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+### Assignment details
+Design a ETL system supporting hospital data from different hospitals (aka different data formats). Each hospital sends 2 types of files: patients and treatments records. Files are sent daily, and can contain millions of rows. 
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+The system should receive batch of two files (from every hospital) and import and store the data in a local DB.
 
-## Description
+### Basic Design
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+The system contains A service which is connected to a MongoDB database.
+The service is built with NestJs, and contains two modules:
+ - Hospitals module: Allows to register new hospitals to the system, also manages jwt authentication.
+    - POST '/hospital/signup' - add hospital to system
+    - POST '/hospital/login' - authenticate as a hospital (returns jwt bearer token)
+    - PATCH '/hospital/update' - update unique data (needs authentication)
 
-## Installation
+  - Files module: Upload files batch to server.
+    - POST '/files' - upload <b>csv</b> files to server. Files types: *Patients*, *Treatments*
 
-```bash
-$ npm install
-```
+### Basic user flow
 
-## Running the app
+  1. Hospital is signing up to the system 
+  2. User is logging in and receives a bearer token 
+  3. User is uploading files via http request
+  4. User receives ok response when file saved to local disk
+  5. On the server:
+    - Files are saved to local disk in format `${hospitalId}.${fileType}.${date}.csv`
+    - Each file is read as a stream line by line
+    - Lines are saved to DB in bulks of varied size (according to env variable)
+    - File is deleted from disk when saving finished
 
-```bash
-# development
-$ npm run start
+### Design challanges and solutions
 
-# watch mode
-$ npm run start:dev
+  - Data storing - Each hospital send different data types with different field names, pre defining schemas might be too complicated.
+    The solution was obvious - use MongoDB because it's schema less, and collections can be created at run time. Therefore, if a new hospital is signing up to the system, a collection will be created when first data will be saved to collection, even if we don't know what data fields will be sent. so I receive better flexibility, and when adding a new hospital, no programmer needs to add a new schema, it's created by the csv file. We are losing the advantages of relational DB, and in particularly the connection between each hospital's tables, but we don't require it in this task.
+      - Pros - Very robust and flexible, easy to add new data types ,easy to change DB intigrating methods
+      - Cons - Can't verify data with schema, no relation between data tables, harder implementing to Nest (comparing to postgress/monogoose)
 
-# production mode
-$ npm run start:prod
-```
-
-## Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+  - File size - Since files might contain millions of records, handling the files in the server might consume too much memory (especially if multiple hospitals send data at the same time), and delay the user waiting for response. The solution was To save the file to the local disk, respond 201 to the user, and than parse the file line by line, using a stream. On the downside, more request to the DB are performed, which can cost more and take more time. Using bulking will help reduce the traffic.
+  
+     - Pros - low memory usage, user not waiting during a long parsing proccess
+     - Cons - More network traffic, no indication to user if parsing fails, 
