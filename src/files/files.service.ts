@@ -4,16 +4,17 @@ import { parse } from 'papaparse';
 import { FilesRepo } from './files.repo';
 import { unlinkSync } from 'fs';
 
+export type fileWithHospitalId = Express.Multer.File & { hospitalId: string };
+
 @Injectable()
 export class FilesService {
     constructor(
         private repo: FilesRepo,
     ) {}
 
-    async parseFile(file: Express.Multer.File, hospitalId: string){
-        console.log("inside service", hospitalId)
+    async parseFile(file: fileWithHospitalId){
         //ToDo: read file and parse line by line
-        const collection = `Hospital${hospitalId}-${file.fieldname}`
+        const collection = `Hospital${file.hospitalId}-${file.fieldname}`
         const csvFile = await readFile(file.path);
         const csvData = csvFile.toString();
 
