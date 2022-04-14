@@ -20,9 +20,8 @@ export class FilesController {
       storage: diskStorage({
             destination: `./files`,
             filename: (req, file, callback) => {
-              // ToDo: change to token
-              // const hospitalId = req.user.hospitalid;
-              const hospitalId = req.headers.hospitalid;
+              const user = req.user as { hospitalid: string }
+              const hospitalId = user.hospitalid;
               const date = new Date().toISOString().slice(0, 10);
               callback(null, `${hospitalId}.${file.fieldname}.${date}.csv`);
             }
