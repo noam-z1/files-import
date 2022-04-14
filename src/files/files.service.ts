@@ -18,19 +18,19 @@ export class FilesService {
       await csv()
         .fromStream(createReadStream(path))
         .subscribe(async (row) => {
-          if (fields) {
+          if (fields?.length) {
             this.repo.upsertWithUniqueFields(fields, row, collection);
           } else {
             data.push(row);
             if (data.length === parseInt(process.env.BULK_SIZE)) {
-              await this.repo.createMany(data, collection);
+              this.repo.createMany(data, collection);
               data.length = 0;
             }
           }
         });
 
-      if (!fields) {
-        await this.repo.createMany(data, collection);
+      if (!fields || fields.length === 0) {
+        this.repo.createMany(data, collection);
       }
       unlinkSync(path);
     } catch (e) {
