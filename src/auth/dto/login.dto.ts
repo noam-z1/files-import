@@ -1,4 +1,1 @@
-export class LoginDto{
-    hospitalId: string;
-    password?: string;
-}
+export { AuthDto as LoginDto } from './auth.dto';
