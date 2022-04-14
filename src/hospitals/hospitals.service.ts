@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { sign } from "jsonwebtoken";
 import { HospitalsRepo } from "./hospitals.repo";
-import { SignupDto } from "./dto/signup.dto";
+import { SignupDto, UniqueColumns } from "./dto/signup.dto";
 
 @Injectable()
 export class HospitalsService {
@@ -38,6 +38,13 @@ export class HospitalsService {
         hospitalData: SignupDto,
     ){
         const { hospitalId, password, uniqueColumns } = hospitalData
-        return this.repo.upsertHospital(hospitalId, password, uniqueColumns);
+        return this.repo.createHospital(hospitalId, password, uniqueColumns);
+    }
+
+    async updateSpecialColumns(
+        hospitalId: string,
+        uniqueColumns: UniqueColumns,
+    ){
+        return this.repo.updateHospitalUniqueColumns(hospitalId, uniqueColumns);
     }
 }

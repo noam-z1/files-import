@@ -1,7 +1,7 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Patch, Post, Query } from "@nestjs/common";
 import { HospitalsService } from "./hospitals.service";
 import { LoginDto } from "./dto/login.dto";
-import { SignupDto } from "./dto/signup.dto";
+import { SignupDto, UniqueColumns } from "./dto/signup.dto";
 
 @Controller('/hospitals')
 export class HospitalsController {
@@ -20,6 +20,15 @@ export class HospitalsController {
     const token = await this.hospitalservice.signUp(body);
     return token;
   }
+
+  @Patch('/update')
+  async updateHospital(
+    @Query('hospitalId') hospitalId: string,
+    @Body() body: UniqueColumns,
+    ) {
+      const result = await this.hospitalservice.updateSpecialColumns(hospitalId, body);
+      return result;
+    }
 
   
 }

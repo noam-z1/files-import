@@ -1,5 +1,6 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Db } from "mongodb";
+import { UniqueColumns } from "./dto/signup.dto";
 
 @Injectable()
 export class HospitalsRepo {
@@ -13,11 +14,23 @@ export class HospitalsRepo {
         return hospital;
     }
 
-    async upsertHospital(hospitalId: string, password?: string, uniqueColumns?: string[]){
+    async createHospital(hospitalId: string, password?: string, uniqueColumns?: UniqueColumns){
         const hospital = await this.db.collection('hospitals').findOne({ id: hospitalId });
         if (hospital) {
-            return this.db.collection('hospitals').updateOne({__id: hospital._id}, { password, uniqueColumns })
+            throw new HttpException('Hospital id already exists', HttpStatus.BAD_REQUEST);
         }
         return this.db.collection('hospitals').insertOne({ hospitalId, password, uniqueColumns })
+    }
+
+    async updateHospitalUniqueColumns(hospitalId: string, uniqueColumns: UniqueColumns){
+        let result;
+        console.log(hospitalId, uniqueColumns)
+        try {
+            result = await this.db.collection('hospitals').updateOne({ id: hospitalId }, { $set: {uniqueColumns }});
+        } catch (e) {
+            console.log(e)
+            throw new HttpException('Unable to update', HttpStatus.BAD_REQUEST);
+        }
+        return result;
     }
 }
