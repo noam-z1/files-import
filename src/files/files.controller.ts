@@ -20,8 +20,8 @@ export class FilesController {
       storage: diskStorage({
             destination: `./files`,
             filename: (req, file, callback) => {
-              const user = req.user as { hospitalid: string }
-              const hospitalId = user.hospitalid;
+              const user = req.user as { hospitalId: string }
+              const hospitalId = user.hospitalId;
               const date = new Date().toISOString().slice(0, 10);
               callback(null, `${hospitalId}.${file.fieldname}.${date}.csv`);
             }
@@ -39,7 +39,7 @@ export class FilesController {
             ...file,
             hospitalId: request.user.hospitalId,
           }
-          this.filesService.parseFile(file);
+          this.filesService.parseFile(fileWithHospitalId);
         })
       })
   }

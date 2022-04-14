@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { readFile } from 'fs/promises';
-import { parse } from 'papaparse';
+import * as csv from 'csv-parser';
 import { FilesRepo } from './files.repo';
-import { unlinkSync } from 'fs';
+import { createReadStream, unlinkSync } from 'fs';
 
 export type fileWithHospitalId = Express.Multer.File & { hospitalId: string };
 
@@ -13,20 +13,24 @@ export class FilesService {
     ) {}
 
     async parseFile(file: fileWithHospitalId){
-        //ToDo: read file and parse line by line
         const collection = `Hospital${file.hospitalId}-${file.fieldname}`
-        const csvFile = await readFile(file.path);
-        const csvData = csvFile.toString();
-
-        const parsedCSV = await parse(csvData, {
-            header: true,
-            skipEmptyLined: true,
-            transformHeader: (header) => header.toLowerCase().replace('#', '').trim(),
-            complete: (results) => { results.data },
-        });
-
-        this.repo.createMany(parsedCSV.data, collection);
-
-        unlinkSync(file.path);
+        const data = [];
+        try {
+            createReadStream(file.path)
+            .pipe(csv())
+            .on('data', async (row) => {
+                data.push(row);
+                if (data.length === parseInt(process.env.BULK_SIZE)){
+                    await this.repo.createMany(data, collection);
+                    data.length = 0;
+                }
+            })
+            .on('end', async () => {
+                await this.repo.createMany(data, collection);
+                unlinkSync(file.path);
+            });
+        } catch (e) {
+            console.log(`Error parsing files, ${e}`);
+        }
     }
 }
