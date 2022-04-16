@@ -1,5 +1,16 @@
 # System design assignment for a job interview
 
+### Starting the app
+
+1. Create mongo DB
+2. Run 'npm install'
+3. Create .env file with params:
+   - DB_URL - url of mongo DB
+   - DB_NAME - DB name
+   - BULK_SIZE - Size of data bulk sent to DB
+   - TOKEN_SECRET - Jwt token sign secret
+4. Run 'npm start'
+
 ## Assignment details
 Design a ETL system supporting hospital data from different hospitals (aka different data formats). Each hospital sends 2 types of files: patients and treatments records. Files are sent daily, and can contain millions of rows. 
 
